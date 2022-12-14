@@ -5,7 +5,7 @@ from os import getenv
 from sys import argv, exit
 import re
 
-from revChatGPT.revChatGPT import Chatbot
+from revChatGPT import Chatbot
 
 
 class CaptchaSolver:
@@ -43,7 +43,7 @@ def get_input(prompt):
         line = input()
         if line == "":
             break
-        lines.append(line)
+        lines.write(line)
 
     # Join the lines, separated by newlines, and print the result
     user_input = "\n".join(lines)
@@ -97,11 +97,27 @@ def verify_config(config):
 
 
 def chatGPT_main(config, debug):
+
     print("Logging in...")
     chatbot = Chatbot(config, debug=debug,
                       captcha_solver=CaptchaSolver())
+
+
+
+    
+    prompt = get_input("\nYou:\n")
+
+    # Create log of this question's answers
+    f = open("Logs/QuestionLog.txt", "a")
+    f.write("\n[----------NEW QUESTION----------]\n\n")
+
+    # Log input prompt
+    f.write("\nYou:\n")
+    f.write(prompt)
+
+    iterations = 1
+
     while True:
-        prompt = get_input("\nYou:\n")
         if prompt.startswith("!"):
             if prompt == "!help":
                 print(
@@ -123,7 +139,7 @@ def chatGPT_main(config, debug):
                 chatbot.refresh_session()
                 print("Session refreshed.\n")
                 continue
-            # elif prompt == "!rollback":
+            #elif prompt == "!rollback":
             elif prompt.startswith("!rollback"):
                 try:
                     # Get the number of messages to rollback
@@ -139,6 +155,7 @@ def chatGPT_main(config, debug):
             elif prompt == "!exit":
                 break
 
+        '''
         if "--text" not in argv:
             lines_printed = 0
 
@@ -159,6 +176,10 @@ def chatGPT_main(config, debug):
                                 print(formatted_parts[lines_printed])
                                 lines_printed += 1
                 print(formatted_parts[lines_printed])
+
+                # Re-input previous output
+                print(message["message"])
+                prompt = message["message"]
             except Exception as exc:
                 print("Response not in correct format!")
                 print(exc)
@@ -168,7 +189,52 @@ def chatGPT_main(config, debug):
                 print("Chatbot: ")
                 message = chatbot.get_chat_response(prompt)
                 print(message["message"])
+
+                # Re-input previous output
+                print(message["message"])
+                prompt = message["message"]
             except Exception as exc:
+                print("Something went wrong!")
+                print(exc)
+                continue
+        '''
+        try:
+
+                str = "[{}] Chatbot: ".format(iterations)
+
+                # Get chatbot's answer, print it, and write it to a file
+                f.write(str)
+                print(str)
+                message = chatbot.get_chat_response(prompt)
+                f.write("{}\n\n".format(message["message"]))
+                print(message["message"],"\n\n")
+
+
+                iterations += 1
+
+                questionprompt = "Ask me a question about that"
+
+                str = "[{}] Chatbot to istelf: ".format(iterations)
+
+                # Get chatbot's question to itself, print it, and write it to a file
+                f.write(str)
+                print(str)
+                message = chatbot.get_chat_response(questionprompt)
+                f.write("{}\n\n".format(message["message"]))
+                print(message["message"],"\n\n")
+
+                # Re-input previous output
+                prompt = message["message"]
+
+                iterations += 1
+        except KeyboardInterrupt:
+            prompt = get_input("\nYour reset of the prompt:\n")
+            if prompt == "!exit":
+                f.close()   
+                exit()
+            else:
+                continue
+        except Exception as exc:
                 print("Something went wrong!")
                 print(exc)
                 continue

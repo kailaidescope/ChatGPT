@@ -326,6 +326,8 @@ class AsyncChatbot:
                 else:
                     self.debugger.log(
                         f"Invalid status code: {response.status_code}")
+                    if response.status_code == 429:
+                        print(response.text)
                     raise Exception("Wrong response code")
             # Try to get new session token and Authorization
             try:
